@@ -40,6 +40,9 @@ yarn-error.log*
 /prisma/dev.db
 /prisma/dev.db-journal
 
+# uploaded attendance photos (personal data, must never be committed)
+/storage/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

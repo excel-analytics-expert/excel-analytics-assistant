@@ -3,13 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { validateQrToken } from "@/lib/qr-token";
 import { ClockMethod } from "@/lib/constants";
 import { formatTimeJP } from "@/lib/date";
+import { savePhotoDataUrl, InvalidPhotoError } from "@/lib/photo-storage";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { token, staffId, action } = body as {
+  const { token, staffId, action, photoDataUrl } = body as {
     token: string;
     staffId: string;
     action: "IN" | "OUT";
+    photoDataUrl?: string;
   };
 
   if (!token || !staffId || (action !== "IN" && action !== "OUT")) {
@@ -41,6 +43,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  let photoFilename: string | null = null;
+  if (photoDataUrl) {
+    try {
+      photoFilename = await savePhotoDataUrl(photoDataUrl);
+    } catch (err) {
+      if (err instanceof InvalidPhotoError) {
+        return NextResponse.json({ error: err.message }, { status: 400 });
+      }
+      throw err;
+    }
+  }
+
   const existing = await prisma.attendance.findUnique({
     where: { shiftId_staffId: { shiftId: shift.id, staffId } },
   });
@@ -54,8 +68,18 @@ export async function POST(req: NextRequest) {
     }
     const attendance = await prisma.attendance.upsert({
       where: { shiftId_staffId: { shiftId: shift.id, staffId } },
-      create: { shiftId: shift.id, staffId, clockIn: new Date(), clockInMethod: ClockMethod.QR },
-      update: { clockIn: new Date(), clockInMethod: ClockMethod.QR },
+      create: {
+        shiftId: shift.id,
+        staffId,
+        clockIn: new Date(),
+        clockInMethod: ClockMethod.QR,
+        clockInPhotoPath: photoFilename,
+      },
+      update: {
+        clockIn: new Date(),
+        clockInMethod: ClockMethod.QR,
+        clockInPhotoPath: photoFilename,
+      },
     });
     return NextResponse.json({ message: "出勤を記録しました。", attendance });
   }
@@ -75,7 +99,11 @@ export async function POST(req: NextRequest) {
 
   const attendance = await prisma.attendance.update({
     where: { shiftId_staffId: { shiftId: shift.id, staffId } },
-    data: { clockOut: new Date(), clockOutMethod: ClockMethod.QR },
+    data: {
+      clockOut: new Date(),
+      clockOutMethod: ClockMethod.QR,
+      clockOutPhotoPath: photoFilename,
+    },
   });
   return NextResponse.json({ message: "退勤を記録しました。", attendance });
 }

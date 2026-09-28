@@ -19,8 +19,9 @@ model Staff {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  assignments  ShiftAssignment[]
-  attendances  Attendance[]
+  assignments      ShiftAssignment[]
+  attendances      Attendance[]
+  incidentReports  IncidentReport[]
 }
 
 model Site {
@@ -44,9 +45,10 @@ model Shift {
   endTime   String   // "17:00"
   createdAt DateTime @default(now())
 
-  site        Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  assignments ShiftAssignment[]
-  attendances Attendance[]
+  site            Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  assignments     ShiftAssignment[]
+  attendances     Attendance[]
+  incidentReports IncidentReport[]
 
   @@index([siteId, date])
   @@index([date])
@@ -65,20 +67,38 @@ model ShiftAssignment {
 }
 
 model Attendance {
-  id            String       @id @default(cuid())
-  shiftId       String
-  staffId       String
-  clockIn        DateTime?
-  clockOut       DateTime?
-  clockInMethod  String?
-  clockOutMethod String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id                String    @id @default(cuid())
+  shiftId           String
+  staffId           String
+  clockIn           DateTime?
+  clockOut          DateTime?
+  clockInMethod     String?
+  clockOutMethod    String?
+  // 本人確認用に撮影した写真（スマホを持たないスタッフは共有端末で撮影）。ファイル名のみ保持し、実体は非公開ディレクトリに保存。
+  clockInPhotoPath  String?
+  clockOutPhotoPath String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@unique([shiftId, staffId])
+}
+
+// リーダー・本社への申し送り事項やトラブル報告。出退勤とは独立していつでも投稿できる。
+model IncidentReport {
+  id        String   @id @default(cuid())
+  shiftId   String
+  staffId   String
+  message   String
+  photoPath String?
+  createdAt DateTime @default(now())
+
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([shiftId])
 }
 
 model DailyQrToken {

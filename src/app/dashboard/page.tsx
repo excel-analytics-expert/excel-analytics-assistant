@@ -2,14 +2,16 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { todayJST, addDaysToDateString, formatDateJP, formatTimeJP } from "@/lib/date";
 import { StaffRole } from "@/lib/constants";
+import { photoUrl } from "@/lib/photo-storage";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const today = todayJST();
   const weekEnd = addDaysToDateString(today, 6);
+  const incidentsSince = addDaysToDateString(today, -6);
 
-  const [sites, weekShifts] = await Promise.all([
+  const [sites, weekShifts, incidentReports] = await Promise.all([
     prisma.site.findMany({ orderBy: { name: "asc" } }),
     prisma.shift.findMany({
       where: { date: { gte: today, lte: weekEnd } },
@@ -19,6 +21,12 @@ export default async function DashboardPage() {
         attendances: true,
       },
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
+    }),
+    prisma.incidentReport.findMany({
+      where: { shift: { date: { gte: incidentsSince, lte: weekEnd } } },
+      include: { staff: true, shift: { include: { site: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
     }),
   ]);
 
@@ -37,6 +45,40 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold">ダッシュボード</h1>
         <p className="text-slate-500 text-sm mt-1">本日: {formatDateJP(today)}</p>
       </div>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">トラブル・申し送り（直近7日間）</h2>
+        {incidentReports.length === 0 ? (
+          <p className="text-slate-500 text-sm">報告はありません。</p>
+        ) : (
+          <ul className="space-y-2">
+            {incidentReports.map((report) => (
+              <li
+                key={report.id}
+                className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm flex items-start justify-between gap-3"
+              >
+                <div>
+                  <p className="text-xs text-slate-500">
+                    {formatDateJP(report.shift.date)} {formatTimeJP(report.createdAt)}・
+                    {report.shift.site.name}・{report.staff.name}
+                  </p>
+                  <p className="mt-1 text-slate-800 whitespace-pre-wrap">{report.message}</p>
+                </div>
+                {photoUrl(report.photoPath) && (
+                  <a
+                    href={photoUrl(report.photoPath)!}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0 text-xs text-sky-600 hover:underline whitespace-nowrap"
+                  >
+                    写真を見る
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section>
         <h2 className="text-lg font-semibold mb-3">本日の現場状況</h2>
@@ -85,6 +127,8 @@ export default async function DashboardPage() {
                         : att?.clockIn
                           ? `出勤中 (${formatTimeJP(att.clockIn)}〜)`
                           : "未出勤";
+                      const inPhoto = photoUrl(att?.clockInPhotoPath);
+                      const outPhoto = photoUrl(att?.clockOutPhotoPath);
                       return (
                         <li key={a.id} className="flex items-center justify-between">
                           <span>
@@ -95,16 +139,28 @@ export default async function DashboardPage() {
                               </span>
                             )}
                           </span>
-                          <span
-                            className={
-                              att?.clockOut
-                                ? "text-slate-400"
-                                : att?.clockIn
-                                  ? "text-emerald-600"
-                                  : "text-slate-400"
-                            }
-                          >
-                            {status}
+                          <span className="flex items-center gap-1">
+                            <span
+                              className={
+                                att?.clockOut
+                                  ? "text-slate-400"
+                                  : att?.clockIn
+                                    ? "text-emerald-600"
+                                    : "text-slate-400"
+                              }
+                            >
+                              {status}
+                            </span>
+                            {inPhoto && (
+                              <a href={inPhoto} target="_blank" rel="noreferrer" title="出勤時の写真">
+                                📷
+                              </a>
+                            )}
+                            {outPhoto && (
+                              <a href={outPhoto} target="_blank" rel="noreferrer" title="退勤時の写真">
+                                📷
+                              </a>
+                            )}
                           </span>
                         </li>
                       );
