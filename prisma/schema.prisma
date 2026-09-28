@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite has no native enum support; roles/methods are validated in the application layer.
+// StaffRole: "LEADER" | "MEMBER"
+// ClockMethod: "QR" | "MANUAL"
+
+model Staff {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  role      String   @default("MEMBER")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  assignments  ShiftAssignment[]
+  attendances  Attendance[]
+}
+
+model Site {
+  id                String   @id @default(cuid())
+  name              String
+  address           String?
+  requiredHeadcount Int      @default(1)
+  defaultStartTime  String   @default("09:00")
+  defaultEndTime    String   @default("17:00")
+  createdAt         DateTime @default(now())
+
+  shifts    Shift[]
+  qrTokens  DailyQrToken[]
+}
+
+model Shift {
+  id        String   @id @default(cuid())
+  siteId    String
+  date      String   // "YYYY-MM-DD"
+  startTime String   // "09:00"
+  endTime   String   // "17:00"
+  createdAt DateTime @default(now())
+
+  site        Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  assignments ShiftAssignment[]
+  attendances Attendance[]
+
+  @@index([siteId, date])
+  @@index([date])
+}
+
+model ShiftAssignment {
+  id       String @id @default(cuid())
+  shiftId  String
+  staffId  String
+
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftId, staffId])
+  @@index([staffId])
+}
+
+model Attendance {
+  id            String       @id @default(cuid())
+  shiftId       String
+  staffId       String
+  clockIn        DateTime?
+  clockOut       DateTime?
+  clockInMethod  String?
+  clockOutMethod String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftId, staffId])
+}
+
+model DailyQrToken {
+  id        String   @id @default(cuid())
+  siteId    String
+  date      String   // "YYYY-MM-DD"
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, date])
+}
