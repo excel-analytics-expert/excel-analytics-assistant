@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import QRCode from "qrcode";
 import { prisma } from "@/lib/prisma";
 import { todayJST } from "@/lib/date";
+import { resolveBaseUrl, isReachableFromPhone } from "@/lib/base-url";
 
 // 表示中のQRコードはこの間隔で新しいものに切り替わる
 export const QR_ROTATION_SECONDS = 60;
@@ -28,7 +29,8 @@ export async function getCurrentQrToken(siteId: string) {
     data: {
       siteId,
       date: todayJST(),
-      token: randomBytes(20).toString("hex"),
+      // 128bitで十分（5分で失効）。URLを短くするとQRの目が粗くなり古いスマホでも読み取りやすい
+      token: randomBytes(16).toString("hex"),
       expiresAt: new Date(now + QR_TOKEN_TTL_SECONDS * 1000),
     },
   });
@@ -49,18 +51,34 @@ export async function validateQrToken(token: string): Promise<TokenValidation> {
   return { valid: true, siteId: record.siteId, date: record.date };
 }
 
-export function attendUrl(token: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_BASE_URL ?? "http://localhost:3000";
-  return `${baseUrl}/attend/${token}`;
-}
-
 // 端末の時計ずれの影響を受けないよう、絶対時刻ではなく「切り替えまでの残りミリ秒」を返す
-export type QrPayload = { url: string; dataUrl: string; msUntilRotation: number };
+export type QrPayload = {
+  url: string;
+  dataUrl: string;
+  msUntilRotation: number;
+  reachableFromPhone: boolean;
+};
 
 export async function buildCurrentQrPayload(siteId: string): Promise<QrPayload> {
   const qrToken = await getCurrentQrToken(siteId);
-  const url = attendUrl(qrToken.token);
-  const dataUrl = await QRCode.toDataURL(url, { width: 320, margin: 1 });
+  const baseUrl = await resolveBaseUrl();
+  const url = `${baseUrl}/attend/${qrToken.token}`;
+
+  // SVGなら画面の解像度に関係なく輪郭がくっきりする。余白は規格どおり4モジュール
+  // （狭いとAndroidの一部カメラで読み取れない）。背景は白・前景は黒で固定。
+  const svg = await QRCode.toString(url, {
+    type: "svg",
+    errorCorrectionLevel: "M",
+    margin: 4,
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+  const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+
   const rotatesAt = qrToken.createdAt.getTime() + QR_ROTATION_SECONDS * 1000;
-  return { url, dataUrl, msUntilRotation: Math.max(rotatesAt - Date.now(), 0) };
+  return {
+    url,
+    dataUrl,
+    msUntilRotation: Math.max(rotatesAt - Date.now(), 0),
+    reachableFromPhone: isReachableFromPhone(baseUrl),
+  };
 }

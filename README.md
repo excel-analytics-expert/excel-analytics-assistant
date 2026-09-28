@@ -16,13 +16,32 @@
 
 ```bash
 npm install
-cp .env.example .env   # 必要に応じて NEXT_PUBLIC_APP_BASE_URL を実際のURLに変更
+cp .env.example .env   # 本番では APP_BASE_URL を公開URLに設定
 npx prisma migrate dev
 npm run db:seed        # サンプルデータ投入（任意）
 npm run dev
 ```
 
-`NEXT_PUBLIC_APP_BASE_URL` は、QRコードに埋め込むURLのベースになります。本番環境にデプロイする場合は実際の公開URL（例: `https://shift.example.com`）に設定してください。
+`APP_BASE_URL` は、QRコードに埋め込むURLのベースになります。本番環境では実際の公開URL（例: `https://shift.example.com`）に設定してください。未設定の場合は、QR画面を開いたときのURLがそのまま使われます。
+
+## スマホ（iPhone / Android）での利用
+
+QRコードは iPhone の標準「カメラ」アプリ、Android の「カメラ」アプリ・「Googleレンズ」、LINEのQRリーダーで読み取れます（専用アプリは不要）。
+
+**社内で試す（同じWi-Fi）**
+
+1. PCで `npm run dev` を実行し、表示される `Network: http://192.168.x.x:3000` を確認
+2. **PCのブラウザでも `localhost` ではなくそのIPアドレスで** QR画面（`/sites/…/qr`）を開く
+   - `localhost` で開くとQRの中身も `localhost` になり、スマホからは開けません（画面に赤い警告が出ます）
+3. スマホのカメラでQRを読み取る
+
+社内LAN（192.168.x.x / 10.x.x.x / 172.x.x.x）以外のアドレスから開発サーバーを使う場合は、`DEV_ALLOWED_ORIGINS` にホスト名を追加してください（未設定だとスマホ側で画面のボタンが動きません）。
+
+**本番運用**
+
+- HTTPSで公開し、`APP_BASE_URL` にそのURLを設定してください。
+- HTTPS環境では、QR表示中の端末の画面が自動で消えないようになります（iOS 16.4以降・Android Chrome）。HTTPでは効かないため、端末の自動ロックをオフにしてください。
+- 写真はブラウザで開ける形式が必要です。Androidの一部機種（Galaxy等）でHEIC形式に設定されている場合は読み込めないため、画面の案内に従ってカメラの保存形式をJPEGにしてください（iPhoneは自動でJPEGに変換されます）。
 
 ## 技術スタック
 
