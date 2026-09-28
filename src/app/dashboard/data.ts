@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { todayJST, addDaysToDateString, formatDateJP, formatTimeJP } from "@/lib/date";
+import { todayJST, addDaysToDateString, formatDateJP, formatTimeJP, minutesLate } from "@/lib/date";
 import { StaffRole } from "@/lib/constants";
 import { photoUrl } from "@/lib/photo-storage";
 
@@ -13,6 +13,7 @@ export type StaffRow = {
   state: StaffState;
   clockIn: string | null;
   clockOut: string | null;
+  lateMinutes: number;
   inPhoto: string | null;
   outPhoto: string | null;
 };
@@ -31,6 +32,7 @@ export type SiteCard = {
 
 export type IncidentItem = {
   id: string;
+  kind: "TROUBLE" | "LATE";
   isToday: boolean;
   dateLabel: string;
   time: string;
@@ -101,6 +103,7 @@ export async function getDashboardData(): Promise<DashboardData> {
           state,
           clockIn: att?.clockIn ? formatTimeJP(att.clockIn) : null,
           clockOut: att?.clockOut ? formatTimeJP(att.clockOut) : null,
+          lateMinutes: att?.clockIn ? minutesLate(shift.date, shift.startTime, att.clockIn) : 0,
           inPhoto: photoUrl(att?.clockInPhotoPath),
           outPhoto: photoUrl(att?.clockOutPhotoPath),
         };
@@ -124,6 +127,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   const incidents: IncidentItem[] = incidentReports.map((r) => ({
     id: r.id,
+    kind: r.kind === "LATE" ? "LATE" : "TROUBLE",
     isToday: r.shift.date === today,
     dateLabel: formatDateJP(r.shift.date),
     time: formatTimeJP(r.createdAt),

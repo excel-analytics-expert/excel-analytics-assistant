@@ -67,7 +67,7 @@ export default function PhoneView({ data }: { data: DashboardData }) {
       </section>
 
       <section>
-        <h2 className="mb-2 text-base font-semibold">トラブル・申し送り</h2>
+        <h2 className="mb-2 text-base font-semibold">報告・届出（トラブル／遅刻）</h2>
         {incidents.length === 0 ? (
           <p className="text-sm text-slate-500">報告はありません。</p>
         ) : (

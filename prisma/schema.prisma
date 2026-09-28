@@ -28,6 +28,8 @@ model Site {
   id                String   @id @default(cuid())
   name              String
   address           String?
+  // Googleマップの共有URL（任意）。ピンを正確に指したいときに登録する。未登録なら住所から検索リンクを作る
+  mapUrl            String?
   requiredHeadcount Int      @default(1)
   defaultStartTime  String   @default("09:00")
   defaultEndTime    String   @default("17:00")
@@ -86,11 +88,13 @@ model Attendance {
   @@unique([shiftId, staffId])
 }
 
-// リーダー・本社への申し送り事項やトラブル報告。出退勤とは独立していつでも投稿できる。
+// リーダー・本社への申し送り事項やトラブル報告、遅刻・遅延の届出。出退勤とは独立していつでも投稿できる。
+// kind: "TROUBLE"（トラブル・申し送り） | "LATE"（遅刻・遅延の届出。photoPathは遅延証明書の写真）
 model IncidentReport {
   id        String   @id @default(cuid())
   shiftId   String
   staffId   String
+  kind      String   @default("TROUBLE")
   message   String
   photoPath String?
   createdAt DateTime @default(now())

@@ -27,6 +27,11 @@ export function StaffStatus({ staff }: { staff: StaffRow }) {
   return (
     <span className={`whitespace-nowrap ${className}`}>
       <span aria-hidden>{icon}</span> {stateText(staff)}
+      {staff.lateMinutes > 0 && (
+        <span className="ml-1 rounded bg-red-50 px-1 text-xs font-semibold text-red-700">
+          ⚠ 遅刻{staff.lateMinutes}分
+        </span>
+      )}
     </span>
   );
 }
@@ -123,7 +128,7 @@ export function StatTiles({ summary, incidentCount }: { summary: DashboardData["
         alert={summary.shortSites > 0}
       />
       <Tile
-        label="本日のトラブル報告"
+        label="本日の報告・届出"
         value={summary.todayIncidents}
         unit="件"
         note={{ text: `直近7日 ${incidentCount}件`, bad: false }}
@@ -134,15 +139,23 @@ export function StatTiles({ summary, incidentCount }: { summary: DashboardData["
 }
 
 export function IncidentCard({ item }: { item: IncidentItem }) {
+  const late = item.kind === "LATE";
   return (
-    <li className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+    <li
+      className={`rounded-lg border p-3 text-sm ${late ? "border-sky-200 bg-sky-50" : "border-amber-200 bg-amber-50"}`}
+    >
       <p className="text-xs text-slate-600">
+        <span
+          className={`mr-1 rounded px-1.5 py-0.5 font-semibold ${late ? "bg-sky-200 text-sky-900" : "bg-amber-200 text-amber-900"}`}
+        >
+          {late ? "遅刻・遅延届" : "トラブル"}
+        </span>
         {item.isToday ? "今日" : item.dateLabel} {item.time}・{item.siteName}・{item.staffName}
       </p>
       <p className="mt-1 whitespace-pre-wrap text-slate-900">{item.message}</p>
       {item.photo && (
         <a href={item.photo} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-sky-700 underline">
-          写真を見る
+          {late ? "遅延証明書を見る" : "写真を見る"}
         </a>
       )}
     </li>

@@ -63,7 +63,7 @@ export default function PcView({ data }: { data: DashboardData }) {
         </section>
 
         <section>
-          <h2 className="mb-3 text-lg font-semibold">トラブル・申し送り（直近7日）</h2>
+          <h2 className="mb-3 text-lg font-semibold">報告・届出（トラブル／遅刻、直近7日）</h2>
           {incidents.length === 0 ? (
             <p className="text-sm text-slate-500">報告はありません。</p>
           ) : (

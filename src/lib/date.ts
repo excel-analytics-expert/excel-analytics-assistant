@@ -33,6 +33,13 @@ export function formatDateJP(dateStr: string): string {
   return `${m}/${d}(${weekday})`;
 }
 
+/** シフト開始時刻（JST）から at までの経過分。開始前なら 0 */
+export function minutesLate(shiftDate: string, startTime: string, at: Date): number {
+  const start = new Date(`${shiftDate}T${startTime}:00+09:00`).getTime();
+  if (Number.isNaN(start)) return 0;
+  return Math.max(0, Math.floor((at.getTime() - start) / 60000));
+}
+
 export function formatTimeJP(date: Date): string {
   return new Intl.DateTimeFormat("ja-JP", {
     timeZone: JST_TIME_ZONE,

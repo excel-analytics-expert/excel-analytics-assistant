@@ -3,6 +3,7 @@
 import { useState } from "react";
 import PhotoCapture from "./PhotoCapture";
 import IncidentForm from "./IncidentForm";
+import SiteInfoCard, { type SiteInfo } from "@/components/SiteInfoCard";
 
 type StaffStatus = {
   staffId: string;
@@ -24,11 +25,11 @@ function formatTime(iso: string | null) {
 
 export default function AttendClient({
   token,
-  siteName,
+  site,
   staffList,
 }: {
   token: string;
-  siteName: string;
+  site: SiteInfo;
   staffList: StaffStatus[];
 }) {
   const [selected, setSelected] = useState<StaffStatus | null>(null);
@@ -37,6 +38,8 @@ export default function AttendClient({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
+  // 開始時刻を過ぎて出勤した場合に遅刻届フォームを自動で開くための合図（値が変わるとフォームを作り直す）
+  const [lateFormKey, setLateFormKey] = useState(0);
 
   function selectStaff(s: StaffStatus) {
     setSelected(s);
@@ -44,6 +47,7 @@ export default function AttendClient({
     setSkipPhoto(false);
     setMessage(null);
     setIsError(false);
+    setLateFormKey(0);
   }
 
   async function handleClock(action: "IN" | "OUT") {
@@ -69,6 +73,7 @@ export default function AttendClient({
         return;
       }
       setMessage(data.message);
+      if (action === "IN" && data.lateMinutes > 0) setLateFormKey((k) => k + 1);
       const attendance = data.attendance;
       setSelected((prev) =>
         prev
@@ -92,7 +97,7 @@ export default function AttendClient({
   if (!selected) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-bold text-center">{siteName}</h1>
+        <SiteInfoCard site={site} heading="今日の現場" />
         <p className="text-center text-sm text-slate-500">ご自身の名前をタップしてください</p>
         <p className="text-center text-xs text-slate-400">
           スマートフォンをお持ちでない方は、リーダーの端末でこの画面を開き、順番に操作してください。
@@ -125,8 +130,8 @@ export default function AttendClient({
   const canClock = Boolean(photo) || skipPhoto;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold text-center">{siteName}</h1>
+    <div className="space-y-4">
+      <SiteInfoCard site={site} heading="今日の現場" />
       <div className="rounded-lg border bg-white p-6 text-center shadow-sm space-y-4">
         <p className="text-2xl font-bold">{selected.name}</p>
         <p className="text-sm text-slate-500">
@@ -172,7 +177,16 @@ export default function AttendClient({
           <p className={`text-sm ${isError ? "text-red-600" : "text-emerald-700"}`}>{message}</p>
         )}
 
-        <IncidentForm token={token} staffId={selected.staffId} />
+        <div className="space-y-2">
+          <IncidentForm
+            key={`late-${selected.staffId}-${lateFormKey}`}
+            token={token}
+            staffId={selected.staffId}
+            kind="LATE"
+            initialOpen={lateFormKey > 0}
+          />
+          <IncidentForm key={`trouble-${selected.staffId}`} token={token} staffId={selected.staffId} kind="TROUBLE" />
+        </div>
 
         <button onClick={() => setSelected(null)} className="text-sm text-sky-600 hover:underline">
           別の人が打刻する

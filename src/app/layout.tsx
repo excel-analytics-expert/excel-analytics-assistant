@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 
 const navItems = [
   { href: "/dashboard", label: "ダッシュボード" },
+  { href: "/my", label: "自分の予定" },
   { href: "/shifts", label: "シフト管理" },
   { href: "/shifts/generate", label: "自動シフト作成" },
   { href: "/sites", label: "現場QRコード" },

@@ -41,10 +41,13 @@ export default function PhotoCapture({
   label,
   value,
   onChange,
+  facing = "user",
 }: {
   label: string;
   value: string | null;
   onChange: (dataUrl: string | null) => void;
+  /** user=自撮り用の前面カメラ（本人確認）／environment=背面カメラ（書類・現場の撮影） */
+  facing?: "user" | "environment";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +74,7 @@ export default function PhotoCapture({
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="user"
+        capture={facing}
         className="hidden"
         onChange={handleFile}
       />
@@ -81,7 +84,11 @@ export default function PhotoCapture({
           <img
             src={value}
             alt="撮影した本人確認用写真"
-            className="h-16 w-16 rounded-full object-cover border"
+            className={
+              facing === "user"
+                ? "h-16 w-16 rounded-full border object-cover"
+                : "h-24 w-20 rounded border bg-white object-contain"
+            }
           />
           <button
             type="button"

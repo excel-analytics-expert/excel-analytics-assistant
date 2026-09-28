@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { buildMapLinks } from "@/lib/maps";
 import SiteForm from "./SiteForm";
 
 export const dynamic = "force-dynamic";
@@ -26,12 +27,22 @@ export default async function SitesPage() {
             <p className="text-sm mt-1 text-slate-600">
               必要人数 {site.requiredHeadcount}人 / {site.defaultStartTime}〜{site.defaultEndTime}
             </p>
-            <Link
-              href={`/sites/${site.id}/qr`}
-              className="mt-3 inline-block rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white"
-            >
-              出退勤QRコードを表示
-            </Link>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Link
+                href={`/sites/${site.id}/qr`}
+                className="inline-block rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white"
+              >
+                出退勤QRコードを表示
+              </Link>
+              <a
+                href={buildMapLinks(site).openUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-sky-700 underline"
+              >
+                Googleマップ
+              </a>
+            </div>
           </div>
         ))}
         {sites.length === 0 && <p className="text-slate-400 text-sm">現場が登録されていません。</p>}

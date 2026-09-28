@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { validateQrToken } from "@/lib/qr-token";
+import { buildMapLinks } from "@/lib/maps";
 import AttendClient from "./AttendClient";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +62,17 @@ export default async function AttendPage({
 
   return (
     <div className="mx-auto max-w-sm py-6">
-      <AttendClient token={token} siteName={site.name} staffList={Array.from(staffMap.values())} />
+      <AttendClient
+        token={token}
+        site={{
+          name: site.name,
+          address: site.address,
+          startTime: shifts[0]?.startTime ?? null,
+          endTime: shifts[0]?.endTime ?? null,
+          ...buildMapLinks(site),
+        }}
+        staffList={Array.from(staffMap.values())}
+      />
     </div>
   );
 }

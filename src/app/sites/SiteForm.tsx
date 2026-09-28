@@ -7,6 +7,7 @@ export default function SiteForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [mapUrl, setMapUrl] = useState("");
   const [requiredHeadcount, setRequiredHeadcount] = useState(1);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
@@ -28,14 +29,19 @@ export default function SiteForm() {
         body: JSON.stringify({
           name,
           address,
+          mapUrl,
           requiredHeadcount,
           defaultStartTime: startTime,
           defaultEndTime: endTime,
         }),
       });
-      if (!res.ok) throw new Error("追加に失敗しました");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "追加に失敗しました");
+      }
       setName("");
       setAddress("");
+      setMapUrl("");
       setRequiredHeadcount(1);
       router.refresh();
     } catch (err) {
@@ -64,6 +70,18 @@ export default function SiteForm() {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
           />
+        </label>
+        <label className="text-sm sm:col-span-2">
+          GoogleマップのURL（任意）
+          <input
+            className="mt-1 w-full rounded border px-2 py-1.5"
+            placeholder="Googleマップで現場を開き「共有」→「リンクをコピー」したURL"
+            value={mapUrl}
+            onChange={(e) => setMapUrl(e.target.value)}
+          />
+          <span className="text-xs text-slate-500">
+            未入力の場合は住所から地図を検索します。入口が分かりにくい現場は、ピンを立てたURLを登録すると正確です。
+          </span>
         </label>
         <label className="text-sm">
           必要人数

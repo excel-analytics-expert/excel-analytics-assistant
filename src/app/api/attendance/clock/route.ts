@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateQrToken } from "@/lib/qr-token";
 import { ClockMethod } from "@/lib/constants";
-import { formatTimeJP } from "@/lib/date";
+import { formatTimeJP, minutesLate } from "@/lib/date";
 import { savePhotoDataUrl, InvalidPhotoError } from "@/lib/photo-storage";
 
 export async function POST(req: NextRequest) {
@@ -66,22 +66,31 @@ export async function POST(req: NextRequest) {
         attendance: existing,
       });
     }
+    const now = new Date();
     const attendance = await prisma.attendance.upsert({
       where: { shiftId_staffId: { shiftId: shift.id, staffId } },
       create: {
         shiftId: shift.id,
         staffId,
-        clockIn: new Date(),
+        clockIn: now,
         clockInMethod: ClockMethod.QR,
         clockInPhotoPath: photoFilename,
       },
       update: {
-        clockIn: new Date(),
+        clockIn: now,
         clockInMethod: ClockMethod.QR,
         clockInPhotoPath: photoFilename,
       },
     });
-    return NextResponse.json({ message: "出勤を記録しました。", attendance });
+    const lateMinutes = minutesLate(shift.date, shift.startTime, now);
+    return NextResponse.json({
+      message:
+        lateMinutes > 0
+          ? `出勤を記録しました（開始時刻を${lateMinutes}分過ぎています）。`
+          : "出勤を記録しました。",
+      attendance,
+      lateMinutes,
+    });
   }
 
   if (!existing?.clockIn) {
