@@ -20,11 +20,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ja" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
         <header className="bg-slate-900 text-white">
-          <div className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-            <span className="font-bold text-lg tracking-tight">清掃シフト管理</span>
-            <nav className="flex flex-wrap gap-4 text-sm">
+          <div className="mx-auto max-w-6xl px-4 pt-3 md:flex md:items-center md:gap-6 md:py-3">
+            <span className="block whitespace-nowrap text-lg font-bold tracking-tight">清掃シフト管理</span>
+            {/* スマホでは1行に収め、はみ出す分は横にスワイプ。PCでは通常の横並び */}
+            <nav className="-mx-4 mt-1 flex gap-1 overflow-x-auto px-3 text-sm md:mx-0 md:mt-0 md:overflow-visible md:px-0">
               {navItems.map((item) => (
-                <Link key={item.href} href={item.href} className="hover:text-sky-300">
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="whitespace-nowrap px-2 py-3 hover:text-sky-300 md:px-2 md:py-0"
+                >
                   {item.label}
                 </Link>
               ))}

@@ -38,6 +38,7 @@ export function formatTimeJP(date: Date): string {
     timeZone: JST_TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    // hour12:false だと環境によって0時台が「24:05」になり、文字列比較（開始時刻を過ぎたか）を誤らせる
+    hourCycle: "h23",
   }).format(date);
 }
