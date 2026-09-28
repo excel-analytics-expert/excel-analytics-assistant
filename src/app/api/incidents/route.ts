@@ -18,7 +18,15 @@ export async function POST(req: NextRequest) {
 
   const validation = await validateQrToken(token);
   if (!validation.valid) {
-    return NextResponse.json({ error: "無効なQRコードです。" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error:
+          validation.reason === "expired"
+            ? "QRコードの有効期限が切れました。最新のQRコードを読み取り直してください。"
+            : "無効なQRコードです。",
+      },
+      { status: 400 }
+    );
   }
 
   const shift = await prisma.shift.findFirst({

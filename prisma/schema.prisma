@@ -101,15 +101,17 @@ model IncidentReport {
   @@index([shiftId])
 }
 
+// 出退勤QRコード用トークン。写真で撮って後から使う不正を防ぐため、短い間隔で新しいトークンを発行し、
+// 各トークンは発行から数分で失効する（同一現場・同一日に複数行が存在する）。
 model DailyQrToken {
   id        String   @id @default(cuid())
   siteId    String
-  date      String   // "YYYY-MM-DD"
+  date      String   // "YYYY-MM-DD" (JST)。どの日の打刻に使われたかの記録用
   token     String   @unique
   createdAt DateTime @default(now())
   expiresAt DateTime
 
   site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
-  @@unique([siteId, date])
+  @@index([siteId, createdAt])
 }

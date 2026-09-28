@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (!validation.valid) {
     const message =
       validation.reason === "expired"
-        ? "このQRコードは本日分ではありません。現場に掲示されている最新のQRコードを読み取ってください。"
+        ? "QRコードの有効期限（表示から5分）が切れました。リーダーの端末に表示されている最新のQRコードを読み取り直してください。"
         : "無効なQRコードです。";
     return NextResponse.json({ error: message }, { status: 400 });
   }

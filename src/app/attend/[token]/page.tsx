@@ -18,7 +18,7 @@ export default async function AttendPage({
         <h1 className="text-lg font-bold text-red-600">このQRコードは使用できません</h1>
         <p className="text-sm text-slate-600">
           {validation.reason === "expired"
-            ? "期限切れのQRコードです。現場に掲示されている最新のQRコードを読み取ってください。"
+            ? "期限切れのQRコードです。QRコードは1分ごとに切り替わります。リーダーの端末に表示されている最新のQRコードをその場で読み取ってください。"
             : "無効なQRコードです。管理者に確認してください。"}
         </p>
       </div>

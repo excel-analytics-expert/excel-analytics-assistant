@@ -12,7 +12,7 @@ export default async function SitesPage() {
       <div>
         <h1 className="text-2xl font-bold">現場・QRコード</h1>
         <p className="text-slate-500 text-sm mt-1">
-          現場ごとに、その日だけ有効なQRコードを発行できます。印刷して現場に掲示するか、タブレットに表示してください。
+          現場ごとの出退勤QRコードは1分ごとに自動で切り替わります。リーダーの端末やタブレットに表示したまま使ってください。
         </p>
       </div>
 
@@ -30,7 +30,7 @@ export default async function SitesPage() {
               href={`/sites/${site.id}/qr`}
               className="mt-3 inline-block rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white"
             >
-              本日のQRコードを表示
+              出退勤QRコードを表示
             </Link>
           </div>
         ))}
